@@ -1,9 +1,11 @@
 package bookstack
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -35,14 +37,33 @@ type UserParams struct {
 	SendInvite     bool   `json:"send_invite,omitempty"`
 }
 
+func (u UserParams) Form() (string, io.Reader, error) {
+
+	data, err := json.Marshal(u)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return "application/json", bytes.NewReader(data), nil
+}
+
 type UserDeleteParams struct {
 	MigrateOwnershipID int `json:"migrate_ownership_id,omitempty"`
+}
+
+func (ud UserDeleteParams) Form() (string, io.Reader, error) {
+	data, err := json.Marshal(ud)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return "application/json", bytes.NewReader(data), nil
 }
 
 // ListUsers will return the users the match the given params.
 func (b *Bookstack) ListUsers(ctx context.Context, params *QueryParams) ([]User, error) {
 
-	resp, err := b.request(ctx, http.MethodGet, params.String("/users"), nil)
+	resp, err := b.request(ctx, http.MethodGet, params.String("/users"), Blank{})
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +74,7 @@ func (b *Bookstack) ListUsers(ctx context.Context, params *QueryParams) ([]User,
 // GetUser will return the user assigned to the given id, or an error.
 func (b *Bookstack) GetUser(ctx context.Context, id int) (User, error) {
 
-	resp, err := b.request(ctx, http.MethodGet, fmt.Sprintf("/users/%d", id), nil)
+	resp, err := b.request(ctx, http.MethodGet, fmt.Sprintf("/users/%d", id), Blank{})
 	if err != nil {
 		return User{}, err
 	}
@@ -64,12 +85,7 @@ func (b *Bookstack) GetUser(ctx context.Context, id int) (User, error) {
 // CreateUser will create a user from the given params.
 func (b *Bookstack) CreateUser(ctx context.Context, params UserParams) (User, error) {
 
-	data, err := json.Marshal(params)
-	if err != nil {
-		return User{}, err
-	}
-
-	resp, err := b.request(ctx, http.MethodPost, "/users", data)
+	resp, err := b.request(ctx, http.MethodPost, "/users", params)
 	if err != nil {
 		return User{}, err
 	}
@@ -80,12 +96,7 @@ func (b *Bookstack) CreateUser(ctx context.Context, params UserParams) (User, er
 // UpdateUser will update the a user with the given params.
 func (b *Bookstack) UpdateUser(ctx context.Context, id int, params UserParams) (User, error) {
 
-	data, err := json.Marshal(params)
-	if err != nil {
-		return User{}, err
-	}
-
-	resp, err := b.request(ctx, http.MethodPut, fmt.Sprintf("/users/%d", id), data)
+	resp, err := b.request(ctx, http.MethodPut, fmt.Sprintf("/users/%d", id), params)
 	if err != nil {
 		return User{}, err
 	}
@@ -96,12 +107,13 @@ func (b *Bookstack) UpdateUser(ctx context.Context, id int, params UserParams) (
 // Delete user will delete a user.
 func (b *Bookstack) DeleteUser(ctx context.Context, id int, params *UserDeleteParams) (bool, error) {
 
-	data, err := json.Marshal(params)
-	if err != nil {
-		return false, err
+	p := UserDeleteParams{}
+
+	if params != nil {
+		p = *params
 	}
 
-	if _, err = b.request(ctx, http.MethodDelete, fmt.Sprintf("/users/%d", id), data); err != nil {
+	if _, err := b.request(ctx, http.MethodDelete, fmt.Sprintf("/users/%d", id), p); err != nil {
 		return false, err
 	}
 

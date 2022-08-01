@@ -133,7 +133,7 @@ func (bp BookParams) Form() (string, io.Reader, error) {
 // ListBooks will return the books that match the given params.
 func (b *Bookstack) ListBooks(ctx context.Context, params *QueryParams) ([]Book, error) {
 
-	resp, err := b.request(ctx, http.MethodGet, params.String("/books"), nil)
+	resp, err := b.request(ctx, http.MethodGet, params.String("/books"), Blank{})
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (b *Bookstack) ListBooks(ctx context.Context, params *QueryParams) ([]Book,
 // GetBook will return a single book that matches id.
 func (b *Bookstack) GetBook(ctx context.Context, id int) (BookDetailed, error) {
 
-	resp, err := b.request(ctx, http.MethodGet, fmt.Sprintf("/books/%d", id), nil)
+	resp, err := b.request(ctx, http.MethodGet, fmt.Sprintf("/books/%d", id), Blank{})
 	if err != nil {
 		return BookDetailed{}, err
 	}
@@ -156,7 +156,7 @@ func (b *Bookstack) GetBook(ctx context.Context, id int) (BookDetailed, error) {
 // CreateBook will create a book according to the given params.
 func (b *Bookstack) CreateBook(ctx context.Context, params BookParams) (Book, error) {
 
-	resp, err := b.form(ctx, http.MethodPost, "/books", params)
+	resp, err := b.request(ctx, http.MethodPost, "/books", params)
 	if err != nil {
 		return Book{}, err
 	}
@@ -167,7 +167,7 @@ func (b *Bookstack) CreateBook(ctx context.Context, params BookParams) (Book, er
 // UpdateBook will update a book with the given params.
 func (b *Bookstack) UpdateBook(ctx context.Context, id int, params BookParams) (Book, error) {
 
-	resp, err := b.form(ctx, http.MethodPut, fmt.Sprintf("/books/%d", id), params)
+	resp, err := b.request(ctx, http.MethodPut, fmt.Sprintf("/books/%d", id), params)
 	if err != nil {
 		return Book{}, err
 	}
@@ -178,7 +178,7 @@ func (b *Bookstack) UpdateBook(ctx context.Context, id int, params BookParams) (
 // DeleteBook will delete a book with the given id.
 func (b *Bookstack) DeleteBook(ctx context.Context, id int) (bool, error) {
 
-	if _, err := b.request(ctx, http.MethodDelete, fmt.Sprintf("/books/%d", id), nil); err != nil {
+	if _, err := b.request(ctx, http.MethodDelete, fmt.Sprintf("/books/%d", id), Blank{}); err != nil {
 		return false, err
 	}
 
