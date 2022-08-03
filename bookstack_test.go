@@ -492,6 +492,7 @@ func TestBookstack(t *testing.T) {
 		// Delete Page
 		ok, err = bk.DeletePage(ctx, page.ID)
 		check.NoError(err)
+		check.True(ok)
 
 		pages, err = bk.ListPages(ctx, nil)
 		check.NoError(err)
