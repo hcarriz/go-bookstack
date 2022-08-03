@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"path"
 	"testing"
 
@@ -23,6 +24,8 @@ func TestBookstack(t *testing.T) {
 	check := require.New(t)
 
 	ctx := context.Background()
+
+	img := "./test_data/upload.png"
 
 	host := "bookstack"
 	hostDB := fmt.Sprintf("%s_db", host)
@@ -212,15 +215,15 @@ func TestBookstack(t *testing.T) {
 		check.Len(users, 2)
 
 		userParams := UserParams{
-			Name:     fake.FullName(),
+			Name:     fmt.Sprintf("%s %s", fake.FirstName(), fake.LastName()),
 			Email:    fake.EmailAddress(),
-			Password: fake.SimplePassword(),
+			Password: fake.Password(10, 24, true, true, true),
 			Language: "en",
 			Roles:    []int{3},
 		}
 
 		created, err := bk.CreateUser(ctx, userParams)
-		check.NoError(err)
+		check.NoError(err, "unable to create user: %+v\n", userParams)
 		check.NotEmpty(created)
 
 		check.Equal(userParams.Email, created.Email)
@@ -267,7 +270,7 @@ func TestBookstack(t *testing.T) {
 
 		bookParams := BookParams{
 			Name:  fake.Title(),
-			Image: "./test_data/upload.png",
+			Image: img,
 		}
 
 		created, err := bk.CreateBook(ctx, bookParams)
@@ -290,9 +293,290 @@ func TestBookstack(t *testing.T) {
 		check.NoError(err)
 		check.Len(books, 1)
 
+		plain, err := bk.ExportBookPlaintext(ctx, created.ID)
+		check.NoError(err)
+		check.NotEmpty(plain)
+
+		b, err := ioutil.ReadAll(plain)
+		check.NoError(err)
+		check.Contains(string(b), updated.Name)
+
+		_, err = bk.ExportBookHTML(ctx, created.ID)
+		check.NoError(err)
+
+		_, err = bk.ExportBookPDF(ctx, created.ID)
+		check.NoError(err)
+
+		_, err = bk.ExportBookMarkdown(ctx, created.ID)
+		check.NoError(err)
+
 		ok, err := bk.DeleteBook(ctx, created.ID)
 		check.NoError(err)
 		check.True(ok)
+
+	})
+
+	t.Run("entire process", func(t *testing.T) {
+
+		bk := New(
+			SetToken(id, secret),
+			SetURL(outside),
+			SetLogger(log.Default()),
+		)
+
+		ctx := context.Background()
+
+		up := UserParams{
+			Name:     fmt.Sprintf("%s %s", fake.FirstName(), fake.LastName()),
+			Email:    fake.EmailAddress(),
+			Password: fake.Password(10, 24, true, true, true),
+		}
+
+		user, err := bk.CreateUser(ctx, up)
+		check.NoError(err, "unable to create user: %+v\n", up)
+		check.NoError(err)
+
+		usr, err := bk.GetUser(ctx, user.ID)
+		check.NoError(err)
+		check.Equal(user, usr)
+
+		usr, err = bk.UpdateUser(ctx, user.ID, UserParams{Email: fake.EmailAddress()})
+		check.NoError(err)
+		check.NotEqual(user, usr)
+
+		users, err := bk.ListUsers(ctx, nil)
+		check.NoError(err)
+		// check.Contains(users, usr)
+		check.GreaterOrEqual(len(users), 3)
+
+		ok, err := bk.DeleteUser(ctx, usr.ID, nil)
+		check.NoError(err)
+		check.True(ok)
+
+		// Create Book 1
+		book, err := bk.CreateBook(ctx, BookParams{Name: fake.Title(), Description: fake.Words()})
+		check.NoError(err)
+		check.NotEmpty(book)
+
+		// Create Book 2
+		book2, err := bk.CreateBook(ctx, BookParams{Name: fake.Title(), Description: fake.Words(), Image: img})
+		check.NoError(err)
+		check.NotEmpty(book2)
+
+		// List Books
+		books, err := bk.ListBooks(ctx, nil)
+		check.NoError(err)
+		check.Len(books, 2)
+
+		// Get Book 1
+		book1, err := bk.GetBook(ctx, book.ID)
+		check.NoError(err)
+		check.Equal(book.Name, book1.Name)
+
+		// Update Book 1
+		book3, err := bk.UpdateBook(ctx, book.ID, BookParams{Name: fake.Title()})
+		check.NoError(err)
+		check.NotEqual(book3, book)
+
+		// Delete Book 2
+		ok, err = bk.DeleteBook(ctx, book2.ID)
+		check.NoError(err)
+		check.True(ok)
+
+		// Check if book was delete
+		books, err = bk.ListBooks(ctx, nil)
+		check.NoError(err)
+		check.Len(books, 1)
+
+		// Create Shelf
+		shelf, err := bk.CreateShelf(ctx, ShelfParams{
+			Name:        fake.Title(),
+			Description: fake.Words(),
+			Books:       []int{book.ID},
+		})
+		check.NoError(err)
+
+		// Update Shelf (Add Book)
+		shelfU, err := bk.UpdateShelf(ctx, shelf.ID, ShelfParams{
+			Name: fake.Title(),
+		})
+		check.NoError(err)
+		check.NotEqual(shelf, shelfU)
+
+		// Get Shelf
+		shelf1, err := bk.GetShelf(ctx, shelf.ID)
+		check.NoError(err)
+		check.Equal(shelf1.Name, shelfU.Name)
+
+		// List Shelves
+		shelves, err := bk.ListShelves(ctx, nil)
+		check.NoError(err)
+		check.Len(shelves, 1)
+
+		tagParams := []TagParams{
+			{
+				Name:  fake.Title(),
+				Value: fake.WordsN(2),
+			},
+			{
+				Name:  fake.Title(),
+				Value: fake.WordsN(2),
+			},
+			{
+				Name:  fake.Title(),
+				Value: fake.WordsN(2),
+			},
+		}
+
+		// Create Chapter
+		chapter, err := bk.CreateChapter(ctx, ChapterParams{
+			BookID: book.ID,
+			Name:   fake.Title(),
+			Tags:   tagParams,
+		})
+
+		check.NoError(err)
+		check.NotEmpty(chapter)
+
+		// Update Chapter
+		chapterUpdated, err := bk.UpdateChapter(ctx, chapter.ID, ChapterParams{Name: fake.Title()})
+		check.NoError(err)
+		check.NotEqual(chapterUpdated.Name, chapter.Name)
+
+		// List Chapter
+		chapters, err := bk.ListChapters(ctx, nil)
+		check.NoError(err)
+		check.Len(chapters, 1)
+		check.Contains(chapters, chapterUpdated)
+
+		// Get Chapter
+		detailedChapter, err := bk.GetChapter(ctx, chapter.ID)
+		check.NoError(err)
+		check.Equal(detailedChapter.Name, chapterUpdated.Name)
+		check.Len(detailedChapter.Tags, len(tagParams))
+
+		pageParams := PageParams{
+			// ChapterID: chapter.ID,
+			BookID: book.ID,
+			Name:   fake.Title(),
+			// Markdown:  fake.WordsN(rand.Intn(1000) + 10),
+			HTML: fmt.Sprintf("<p>%s</p>", fake.WordsN(rand.Intn(1000)+10)),
+			Tags: tagParams,
+		}
+
+		// Create Page
+		page, err := bk.CreatePage(ctx, pageParams)
+		check.NoError(err, "unable to create page %+v\n", pageParams)
+		check.Equal(page.BookID, book.ID)
+
+		pageUpdateParams := PageParams{
+			Name: fake.Title(),
+		}
+
+		// Update Page
+		pageUpdated, err := bk.UpdatePage(ctx, page.ID, pageUpdateParams)
+		check.NoError(err)
+		check.NotEqual(pageUpdated, page)
+
+		// List Page
+		pages, err := bk.ListPages(ctx, nil)
+		check.NoError(err)
+		check.Len(pages, 1)
+
+		// Get Page
+		pageDetailed, err := bk.GetPage(ctx, page.ID)
+		check.NoError(err)
+		check.NotEmpty(pageDetailed.HTML)
+		check.Equal(pageDetailed.Markdown, pageParams.Markdown)
+
+		// Delete Page
+		ok, err = bk.DeletePage(ctx, page.ID)
+		check.NoError(err)
+
+		pages, err = bk.ListPages(ctx, nil)
+		check.NoError(err)
+		check.Len(pages, 0)
+
+		// Delete Chapter
+		ok, err = bk.DeleteChapter(ctx, chapter.ID)
+		check.NoError(err)
+		check.True(ok)
+
+		chapters, err = bk.ListChapters(ctx, nil)
+		check.NoError(err)
+		check.Len(chapters, 0)
+
+		// Delete Book 1
+		ok, err = bk.DeleteBook(ctx, book.ID)
+		check.NoError(err)
+		check.True(ok)
+
+		books, err = bk.ListBooks(ctx, nil)
+		check.NoError(err)
+		check.Len(books, 0)
+
+		// Delete Shelves
+		ok, err = bk.DeleteShelf(ctx, shelf.ID)
+		check.NoError(err)
+		check.True(ok)
+
+		shelves, err = bk.ListShelves(ctx, nil)
+		check.NoError(err)
+		check.Len(shelves, 0)
+
+		// List recycle bin items
+		items, err := bk.ListRecycleBinItems(ctx)
+		check.NoError(err)
+		check.Len(items, 6)
+
+		for _, item := range items {
+
+			switch item.DeletableType {
+			case DeletedBook:
+				item, ok := item.Book()
+				check.True(ok)
+				check.NotNil(item)
+			case DeletedChapter:
+				item, ok := item.Chapter()
+				check.True(ok)
+				check.NotNil(item)
+			case DeletedShelf:
+				item, ok := item.Shelf()
+				check.True(ok)
+				check.NotNil(item)
+			case DeletedPage:
+				item, ok := item.Page()
+				check.True(ok)
+				check.NotNil(item)
+
+			default:
+				t.Errorf("unknown type %v", item.DeletableType)
+			}
+
+		}
+
+		item := items[0]
+
+		// Restore recycle bin item
+		count, err := bk.RestoreRecyleBinItem(ctx, item.DeletableID)
+		check.NoError(err)
+		check.Equal(count, 1)
+
+		items, err = bk.ListRecycleBinItems(ctx)
+		check.NoError(err)
+		check.Len(items, 5)
+
+		item = items[0]
+
+		// Destroy item
+		count, err = bk.DeleteRecycleBinItem(ctx, item.DeletableID)
+		check.NoError(err)
+		check.Equal(count, 1)
+
+		// List recycle bin items
+		items, err = bk.ListRecycleBinItems(ctx)
+		check.NoError(err)
+		check.Len(items, 4)
 
 	})
 

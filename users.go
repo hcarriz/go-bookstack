@@ -57,13 +57,13 @@ func (ud UserDeleteParams) Form() (string, io.Reader, error) {
 		return "", nil, err
 	}
 
-	return "application/json", bytes.NewReader(data), nil
+	return appJSON, bytes.NewReader(data), nil
 }
 
 // ListUsers will return the users the match the given params.
 func (b *Bookstack) ListUsers(ctx context.Context, params *QueryParams) ([]User, error) {
 
-	resp, err := b.request(ctx, http.MethodGet, params.String("/users"), Blank{})
+	resp, err := b.request(ctx, http.MethodGet, params.String("/users"), blank{})
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (b *Bookstack) ListUsers(ctx context.Context, params *QueryParams) ([]User,
 // GetUser will return the user assigned to the given id, or an error.
 func (b *Bookstack) GetUser(ctx context.Context, id int) (User, error) {
 
-	resp, err := b.request(ctx, http.MethodGet, fmt.Sprintf("/users/%d", id), Blank{})
+	resp, err := b.request(ctx, http.MethodGet, fmt.Sprintf("/users/%d", id), blank{})
 	if err != nil {
 		return User{}, err
 	}

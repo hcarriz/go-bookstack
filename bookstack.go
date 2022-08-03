@@ -14,6 +14,10 @@ import (
 	"go.uber.org/ratelimit"
 )
 
+const (
+	appJSON = "application/json"
+)
+
 type Bookstack struct {
 	url         string
 	tokenID     string
@@ -132,11 +136,11 @@ func (b *Bookstack) request(ctx context.Context, method, query string, data Form
 }
 
 type Single interface {
-	User | Book | BookDetailed
+	User | Book | BookDetailed | Chapter | ChapterDetailed | Page | PageDetailed | Shelf | ShelfDetailed
 }
 
 type Group interface {
-	[]User | []Book
+	[]User | []Book | []Chapter | []Page | []Shelf | []RecycleBinItem
 }
 
 func ParseSingle[s Single](data []byte) (s, error) {

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 type Response struct {
@@ -76,13 +77,39 @@ type Tag struct {
 	Order int    `json:"order,omitempty"`
 }
 
-type TagReq struct {
+type TagParams struct {
 	Name  string `json:"name,omitempty"`
 	Value string `json:"value,omitempty"`
 }
 
-type Blank struct{}
+type CreatedBy struct {
+	ID   int    `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+type UpdatedBy struct {
+	ID   int    `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+type OwnedBy struct {
+	ID   int    `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
 
-func (b Blank) Form() (string, io.Reader, error) {
+type Cover struct {
+	ID         int       `json:"id,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	URL        string    `json:"url,omitempty"`
+	CreatedAt  time.Time `json:"created_at,omitempty"`
+	UpdatedAt  time.Time `json:"updated_at,omitempty"`
+	CreatedBy  int       `json:"created_by,omitempty"`
+	UpdatedBy  int       `json:"updated_by,omitempty"`
+	Path       string    `json:"path,omitempty"`
+	Type       string    `json:"type,omitempty"`
+	UploadedTo int       `json:"uploaded_to,omitempty"`
+}
+
+type blank struct{}
+
+func (b blank) Form() (string, io.Reader, error) {
 	return "", nil, nil
 }
