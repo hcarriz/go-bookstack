@@ -489,6 +489,35 @@ func TestBookstack(t *testing.T) {
 		check.NotEmpty(pageDetailed.HTML)
 		check.Equal(pageDetailed.Markdown, pageParams.Markdown)
 
+		// Attachments
+		attachment, err := bk.CreateAttachment(ctx, AttachmentParams{
+			Name:       fake.Title(),
+			UploadedTo: page.ID,
+			File:       img,
+		})
+		check.NoError(err)
+		check.NotEmpty(attachment)
+
+		// List Attachments
+		attachments, err := bk.ListAttachments(ctx, nil)
+		check.NoError(err)
+		check.Len(attachments, 1)
+
+		// Update attachment
+		attachmentUpdated, err := bk.UpdateAttachment(ctx, attachment.ID, AttachmentParams{Name: fake.Title()})
+		check.NoError(err)
+		check.NotEqual(attachment, attachmentUpdated)
+
+		// Detailed Attachment
+		detailedAttachment, err := bk.GetAttachment(ctx, attachment.ID)
+		check.NoError(err)
+		check.NotEmpty(detailedAttachment)
+
+		// Delete Attachment
+		ok, err = bk.DeleteAttachment(ctx, attachment.ID)
+		check.NoError(err)
+		check.True(ok)
+
 		// Delete Page
 		ok, err = bk.DeletePage(ctx, page.ID)
 		check.NoError(err)

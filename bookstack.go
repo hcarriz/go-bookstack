@@ -135,11 +135,11 @@ func (b *Bookstack) request(ctx context.Context, method, query string, data Form
 }
 
 type Single interface {
-	User | Book | BookDetailed | Chapter | ChapterDetailed | Page | PageDetailed | Shelf | ShelfDetailed | RecycledBook | RecycledPage | RecycledChapter
+	User | Book | BookDetailed | Chapter | ChapterDetailed | Page | PageDetailed | Shelf | ShelfDetailed | RecycledBook | RecycledPage | RecycledChapter | Attachment | AttachmentDetailed
 }
 
 type Group interface {
-	[]User | []Book | []Chapter | []Page | []Shelf | []RecycleBinItem
+	[]User | []Book | []Chapter | []Page | []Shelf | []RecycleBinItem | []Attachment
 }
 
 func ParseSingle[s Single](data []byte) (s, error) {
