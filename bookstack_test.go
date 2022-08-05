@@ -537,19 +537,24 @@ func TestBookstack(t *testing.T) {
 				item, ok := item.Book()
 				check.True(ok)
 				check.NotNil(item)
+				check.NotEmpty(item)
 			case DeletedChapter:
 				item, ok := item.Chapter()
 				check.True(ok)
 				check.NotNil(item)
+				check.NotEmpty(item)
+				check.NotEmpty(item.Parent)
 			case DeletedShelf:
 				item, ok := item.Shelf()
 				check.True(ok)
 				check.NotNil(item)
+				check.NotEmpty(item)
 			case DeletedPage:
 				item, ok := item.Page()
 				check.True(ok)
 				check.NotNil(item)
-
+				check.NotEmpty(item)
+				check.NotEmpty(item.Parent)
 			default:
 				t.Errorf("unknown type %v", item.DeletableType)
 			}

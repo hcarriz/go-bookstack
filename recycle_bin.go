@@ -18,9 +18,55 @@ type RecycleBinItem struct {
 	Deletable     json.RawMessage `json:"deletable,omitempty"`
 }
 
-func (i RecycleBinItem) Book() (*Book, bool) {
+type RecycledBook struct {
+	Book
+	PagesCount    int `json:"pages_count,omitempty"`
+	ChaptersCount int `json:"chapters_count,omitempty"`
+}
 
-	result, err := ParseSingle[Book]([]byte(i.Deletable))
+type RecycledPage struct {
+	ID            int       `json:"id,omitempty"`
+	BookID        int       `json:"book_id,omitempty"`
+	ChapterID     int       `json:"chapter_id,omitempty"`
+	Name          string    `json:"name,omitempty"`
+	Slug          string    `json:"slug,omitempty"`
+	Priority      int       `json:"priority,omitempty"`
+	CreatedAt     time.Time `json:"created_at,omitempty"`
+	UpdatedAt     time.Time `json:"updated_at,omitempty"`
+	CreatedBy     int       `json:"created_by,omitempty"`
+	UpdatedBy     int       `json:"updated_by,omitempty"`
+	Draft         bool      `json:"draft,omitempty"`
+	RevisionCount int       `json:"revision_count,omitempty"`
+	Template      bool      `json:"template,omitempty"`
+	OwnedBy       int       `json:"owned_by,omitempty"`
+	Editor        string    `json:"editor,omitempty"`
+	BookSlug      string    `json:"book_slug,omitempty"`
+	Parent        Parent    `json:"parent,omitempty"`
+}
+
+type RecycledChapter struct {
+	Chapter
+	BookSlug   string `json:"book_slug,omitempty"`
+	PagesCount int    `json:"pages_count,omitempty"`
+	Parent     Parent `json:"parent,omitempty"`
+}
+
+type Parent struct {
+	ID          int       `json:"id,omitempty"`
+	Name        string    `json:"name,omitempty"`
+	Slug        string    `json:"slug,omitempty"`
+	Description string    `json:"description,omitempty"`
+	CreatedAt   time.Time `json:"created_at,omitempty"`
+	UpdatedAt   time.Time `json:"updated_at,omitempty"`
+	CreatedBy   int       `json:"created_by,omitempty"`
+	UpdatedBy   int       `json:"updated_by,omitempty"`
+	OwnedBy     int       `json:"owned_by,omitempty"`
+	Type        string    `json:"type,omitempty"`
+}
+
+func (i RecycleBinItem) Book() (*RecycledBook, bool) {
+
+	result, err := ParseSingle[RecycledBook]([]byte(i.Deletable))
 	if err != nil {
 		return nil, false
 	}
@@ -28,9 +74,9 @@ func (i RecycleBinItem) Book() (*Book, bool) {
 	return &result, true
 }
 
-func (i RecycleBinItem) Chapter() (*Chapter, bool) {
+func (i RecycleBinItem) Chapter() (*RecycledChapter, bool) {
 
-	result, err := ParseSingle[Chapter]([]byte(i.Deletable))
+	result, err := ParseSingle[RecycledChapter]([]byte(i.Deletable))
 	if err != nil {
 		return nil, false
 	}
@@ -48,9 +94,9 @@ func (i RecycleBinItem) Shelf() (*Shelf, bool) {
 	return &result, true
 }
 
-func (i RecycleBinItem) Page() (*Page, bool) {
+func (i RecycleBinItem) Page() (*RecycledPage, bool) {
 
-	result, err := ParseSingle[Page]([]byte(i.Deletable))
+	result, err := ParseSingle[RecycledPage]([]byte(i.Deletable))
 	if err != nil {
 		return nil, false
 	}

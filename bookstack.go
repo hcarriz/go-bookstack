@@ -120,7 +120,6 @@ func (b *Bookstack) request(ctx context.Context, method, query string, data Form
 		return nil, err
 	}
 
-	// if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent {
 	if resp.StatusCode >= http.StatusOK && resp.StatusCode <= http.StatusIMUsed {
 		return raw, nil
 	}
@@ -136,7 +135,7 @@ func (b *Bookstack) request(ctx context.Context, method, query string, data Form
 }
 
 type Single interface {
-	User | Book | BookDetailed | Chapter | ChapterDetailed | Page | PageDetailed | Shelf | ShelfDetailed
+	User | Book | BookDetailed | Chapter | ChapterDetailed | Page | PageDetailed | Shelf | ShelfDetailed | RecycledBook | RecycledPage | RecycledChapter
 }
 
 type Group interface {
