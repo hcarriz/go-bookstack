@@ -13,7 +13,7 @@ type RecycleBinItem struct {
 	DeletedBy     int             `json:"deleted_by,omitempty"`
 	CreatedAt     time.Time       `json:"created_at,omitempty"`
 	UpdatedAt     time.Time       `json:"updated_at,omitempty"`
-	DeletableType DeletableType   `json:"deletable_type,omitempty"`
+	DeletableType ContentType     `json:"deletable_type,omitempty"`
 	DeletableID   int             `json:"deletable_id,omitempty"`
 	Deletable     json.RawMessage `json:"deletable,omitempty"`
 }
@@ -104,13 +104,14 @@ func (i RecycleBinItem) Page() (*RecycledPage, bool) {
 	return &result, true
 }
 
-type DeletableType string
+type ContentType string
 
 const (
-	DeletedBook    DeletableType = "book"
-	DeletedChapter DeletableType = "chapter"
-	DeletedShelf   DeletableType = "bookshelf"
-	DeletedPage    DeletableType = "page"
+	ContentBook       ContentType = "book"
+	ContentChapter    ContentType = "chapter"
+	ContentShelf      ContentType = "bookshelf"
+	ContentAttachment ContentType = "attachment"
+	ContentPage       ContentType = "page"
 )
 
 // ListRecycleBinItems will list the items in the recycle bin.

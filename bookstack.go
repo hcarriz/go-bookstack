@@ -139,7 +139,7 @@ type Single interface {
 }
 
 type Group interface {
-	[]User | []Book | []Chapter | []Page | []Shelf | []RecycleBinItem | []Attachment
+	[]User | []Book | []Chapter | []Page | []Shelf | []RecycleBinItem | []Attachment | []Search
 }
 
 func ParseSingle[s Single](data []byte) (s, error) {

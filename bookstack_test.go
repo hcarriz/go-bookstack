@@ -12,7 +12,6 @@ import (
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/proto"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -513,6 +512,18 @@ func TestBookstack(t *testing.T) {
 		check.NoError(err)
 		check.NotEmpty(detailedAttachment)
 
+		// Search
+		results, err := bk.Search(ctx, SearchParams{InName: &pageUpdateParams.Name})
+		check.NoError(err)
+		check.Len(results, 1)
+
+		check.Equal(ContentPage, results[0].Type)
+		check.Equal(pageUpdateParams.Name, results[0].Name)
+
+		results, err = bk.Search(ctx, SearchParams{InName: &pageUpdateParams.Name, Type: []ContentType{ContentBook}})
+		check.NoError(err)
+		check.Len(results, 0)
+
 		// Delete Attachment
 		ok, err = bk.DeleteAttachment(ctx, attachment.ID)
 		check.NoError(err)
@@ -562,23 +573,23 @@ func TestBookstack(t *testing.T) {
 		for _, item := range items {
 
 			switch item.DeletableType {
-			case DeletedBook:
+			case ContentBook:
 				item, ok := item.Book()
 				check.True(ok)
 				check.NotNil(item)
 				check.NotEmpty(item)
-			case DeletedChapter:
+			case ContentChapter:
 				item, ok := item.Chapter()
 				check.True(ok)
 				check.NotNil(item)
 				check.NotEmpty(item)
 				check.NotEmpty(item.Parent)
-			case DeletedShelf:
+			case ContentShelf:
 				item, ok := item.Shelf()
 				check.True(ok)
 				check.NotNil(item)
 				check.NotEmpty(item)
-			case DeletedPage:
+			case ContentPage:
 				item, ok := item.Page()
 				check.True(ok)
 				check.NotNil(item)
